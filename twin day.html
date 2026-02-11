@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twin Day Sales — Analytics Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #0b0f1a;
+            --bg2: #111827;
+            --bg3: #1a2235;
+            --bg4: #232d42;
+            --glass: rgba(17, 24, 39, .65);
+            --glass-border: rgba(255, 255, 255, .08);
+            --text: #e2e8f0;
+            --text2: #94a3b8;
+            --text3: #64748b;
+            --accent: #06b6d4;
+            --accent2: #8b5cf6;
+            --accent3: #ec4899;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --danger: #ef4444;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, .35);
+            --transition: .25s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        html {
+            font-size: 14px
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg2)
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg4);
+            border-radius: 3px
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent)
+        }
+
+        /* HEADER */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 100
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .logo-icon svg {
+            width: 36px;
+            height: 36px
+        }
+
+        .app-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .app-subtitle {
+            font-size: .75rem;
+            color: var(--text3);
+            font-weight: 400
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .sheet-select {
+            background: var(--bg3);
+            color: var(--text);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 6px 12px;
+            font-family: inherit;
+            font-size: .85rem;
+            cursor: pointer
+        }
+
+        .sheet-selector-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .sheet-selector-wrap label {
+            color: var(--text2);
+            font-size: .8rem;
+            font-weight: 500
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition)
+        }
+
+        .btn-upload {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: #fff;
+            padding: 8px 18px;
+            font-size: .85rem
+        }
+
+        .btn-upload:hover {
+            filter: brightness(1.15);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(6, 182, 212, .3)
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: .78rem
+        }
+
+        .btn-xs {
+            padding: 4px 8px;
+            font-size: .72rem
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text2);
+            border: 1px solid var(--glass-border)
+        }
+
+        .btn-ghost:hover {
+            color: var(--accent);
+            border-color: var(--accent)
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent), #0891b2);
+            color: #fff
+        }
+
+        .btn-accent:hover {
+            filter: brightness(1.15)
+        }
+
+        .btn-accent-alt {
+            background: linear-gradient(135deg, var(--accent2), var(--accent3));
+            color: #fff
+        }
+
+        .btn-accent-alt:hover {
+            filter: brightness(1.15)
+        }
+
+        .btn-clear-filters {
+            background: rgba(239, 68, 68, .15);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, .3);
+            padding: 6px 14px;
+            font-size: .78rem
+        }
+
+        .btn-clear-filters:hover {
+            background: rgba(239, 68, 68, .25)
+        }
+
+        /* DROPZONE */
+        .dropzone-hero {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 75vh;
+            padding: 40px
+        }
+
+        .dropzone {
+            border: 2px dashed var(--bg4);
+            border-radius: 20px;
+            padding: 80px 60px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            max-width: 560px;
+            width: 100%;
+            background: var(--glass);
+            backdrop-filter: blur(12px)
+        }
+
+        .dropzone.drag-over {
+            border-color: var(--accent);
+            background: rgba(6, 182, 212, .06);
+            transform: scale(1.02)
+        }
+
+        .dropzone-icon {
+            margin-bottom: 24px;
+            animation: float 3s ease-in-out infinite
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(-10px)
+            }
+        }
+
+        .dropzone h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 8px
+        }
+
+        .dropzone p {
+            color: var(--text2);
+            font-size: .9rem
+        }
+
+        .dropzone-link {
+            color: var(--accent);
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: 600
+        }
+
+        .dropzone-formats {
+            font-size: .75rem;
+            color: var(--text3);
+            margin-top: 12px
+        }
+
+        /* FILE INFO BAR */
+        .file-info-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 20px;
+            background: var(--bg2);
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            border: 1px solid var(--glass-border)
+        }
+
+        .file-info-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--accent)
+        }
+
+        .file-info-stats {
+            display: flex;
+            gap: 8px
+        }
+
+        .badge {
+            background: var(--bg3);
+            color: var(--text2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 500
+        }
+
+        /* KPI CARDS */
+        .kpi-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px
+        }
+
+        .kpi-card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition)
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+            border-color: rgba(255, 255, 255, .12)
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: var(--radius) var(--radius) 0 0
+        }
+
+        .kpi-card:nth-child(1)::before {
+            background: linear-gradient(90deg, var(--accent), var(--accent2))
+        }
+
+        .kpi-card:nth-child(2)::before {
+            background: linear-gradient(90deg, var(--accent2), var(--accent3))
+        }
+
+        .kpi-card:nth-child(3)::before {
+            background: linear-gradient(90deg, var(--success), var(--accent))
+        }
+
+        .kpi-card:nth-child(4)::before {
+            background: linear-gradient(90deg, var(--warn), var(--accent3))
+        }
+
+        .kpi-card:nth-child(5)::before {
+            background: linear-gradient(90deg, var(--accent3), var(--danger))
+        }
+
+        .kpi-label {
+            font-size: .72rem;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-weight: 600;
+            margin-bottom: 6px
+        }
+
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--text), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .kpi-sub {
+            font-size: .7rem;
+            color: var(--text3);
+            margin-top: 4px
+        }
+
+        /* ACTIVE FILTERS */
+        .active-filters {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg2);
+            border-radius: var(--radius-sm);
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            border: 1px solid var(--glass-border)
+        }
+
+        .active-filters-label {
+            font-size: .75rem;
+            color: var(--text3);
+            font-weight: 600;
+            white-space: nowrap
+        }
+
+        .filter-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(6, 182, 212, .12);
+            color: var(--accent);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: .72rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition)
+        }
+
+        .filter-badge:hover {
+            background: rgba(239, 68, 68, .15);
+            color: var(--danger)
+        }
+
+        .filter-badge svg {
+            width: 12px;
+            height: 12px
+        }
+
+        /* MAIN GRID */
+        .dashboard {
+            padding: 20px 24px
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 16px
+        }
+
+        @media(max-width:900px) {
+            .main-grid {
+                grid-template-columns: 1fr
+            }
+        }
+
+        /* FILTER SIDEBAR */
+        .filter-sidebar {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 0;
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+            position: sticky;
+            top: 80px;
+            transition: var(--transition)
+        }
+
+        .filter-sidebar.collapsed {
+            width: 48px;
+            min-width: 48px;
+            overflow: hidden
+        }
+
+        .filter-sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--glass-border)
+        }
+
+        .filter-sidebar-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text)
+        }
+
+        .filter-list {
+            padding: 8px
+        }
+
+        .filter-group {
+            margin-bottom: 6px;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            overflow: hidden
+        }
+
+        .filter-group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text2);
+            background: var(--bg3)
+        }
+
+        .filter-group-header:hover {
+            color: var(--text);
+            background: var(--bg4)
+        }
+
+        .filter-group-header .col-type {
+            font-size: .62rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: .04em
+        }
+
+        .col-type-text {
+            background: rgba(139, 92, 246, .15);
+            color: var(--accent2)
+        }
+
+        .col-type-number {
+            background: rgba(6, 182, 212, .15);
+            color: var(--accent)
+        }
+
+        .col-type-date {
+            background: rgba(236, 72, 153, .15);
+            color: var(--accent3)
+        }
+
+        .filter-group-body {
+            padding: 10px 12px;
+            display: none;
+            background: var(--bg2)
+        }
+
+        .filter-group.open .filter-group-body {
+            display: block
+        }
+
+        .filter-group-header .chevron {
+            transition: var(--transition);
+            transform: rotate(0deg)
+        }
+
+        .filter-group.open .filter-group-header .chevron {
+            transform: rotate(180deg)
+        }
+
+        /* Text filter */
+        .filter-search {
+            width: 100%;
+            padding: 6px 10px;
+            background: var(--bg3);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: .78rem;
+            margin-bottom: 6px;
+            outline: none;
+            transition: var(--transition)
+        }
+
+        .filter-search:focus {
+            border-color: var(--accent)
+        }
+
+        .filter-options {
+            max-height: 180px;
+            overflow-y: auto
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            cursor: pointer;
+            font-size: .78rem;
+            color: var(--text2);
+            transition: var(--transition)
+        }
+
+        .filter-option:hover {
+            color: var(--text)
+        }
+
+        .filter-option input[type="checkbox"] {
+            accent-color: var(--accent);
+            width: 14px;
+            height: 14px;
+            cursor: pointer
+        }
+
+        .filter-select-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 6px
+        }
+
+        .filter-select-actions button {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: .7rem;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            padding: 2px 0
+        }
+
+        .filter-select-actions button:hover {
+            text-decoration: underline
+        }
+
+        /* Range filter */
+        .range-filter {
+            padding: 4px 0
+        }
+
+        .range-inputs {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px
+        }
+
+        .range-input {
+            flex: 1;
+            padding: 6px 8px;
+            background: var(--bg3);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: .78rem;
+            outline: none;
+            text-align: center
+        }
+
+        .range-input:focus {
+            border-color: var(--accent)
+        }
+
+        .range-sep {
+            color: var(--text3);
+            font-size: .8rem
+        }
+
+        .range-slider-wrap {
+            position: relative;
+            height: 30px;
+            margin: 4px 0
+        }
+
+        .range-track {
+            position: absolute;
+            top: 12px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--bg4);
+            border-radius: 2px
+        }
+
+        .range-fill {
+            position: absolute;
+            top: 12px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            border-radius: 2px
+        }
+
+        .range-thumb {
+            position: absolute;
+            top: 6px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 2px solid var(--bg);
+            cursor: grab;
+            transition: box-shadow .15s;
+            z-index: 2
+        }
+
+        .range-thumb:hover {
+            box-shadow: 0 0 0 4px rgba(6, 182, 212, .25)
+        }
+
+        .range-thumb:active {
+            cursor: grabbing
+        }
+
+        /* Date filter */
+        .date-input {
+            width: 100%;
+            padding: 6px 10px;
+            background: var(--bg3);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: .78rem;
+            outline: none;
+            margin-bottom: 6px
+        }
+
+        .date-input:focus {
+            border-color: var(--accent)
+        }
+
+        /* CHARTS */
+        .chart-section {
+            margin-bottom: 16px
+        }
+
+        .chart-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px
+        }
+
+        .chart-controls h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            font-weight: 700
+        }
+
+        .chart-axis-controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px
+        }
+
+        .control-group label {
+            font-size: .68rem;
+            color: var(--text3);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .04em
+        }
+
+        .control-select {
+            background: var(--bg3);
+            color: var(--text);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-family: inherit;
+            font-size: .78rem;
+            cursor: pointer;
+            min-width: 120px
+        }
+
+        .control-select-sm {
+            min-width: 60px;
+            padding: 4px 6px
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px
+        }
+
+        .chart-card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 16px;
+            transition: var(--transition)
+        }
+
+        .chart-card:hover {
+            border-color: rgba(255, 255, 255, .12)
+        }
+
+        .chart-card-wide {
+            grid-column: 1/-1
+        }
+
+        .chart-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px
+        }
+
+        .chart-card-header h4 {
+            font-size: .85rem;
+            font-weight: 600;
+            color: var(--text2)
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 260px
+        }
+
+        .chart-wrap-wide {
+            height: 220px
+        }
+
+        .chart-wrap canvas {
+            width: 100% !important;
+            height: 100% !important
+        }
+
+        /* TABLE */
+        .table-section {
+            margin-top: 4px
+        }
+
+        .table-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px
+        }
+
+        .table-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            font-weight: 700
+        }
+
+        .table-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg3);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 6px 12px
+        }
+
+        .search-box input {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-family: inherit;
+            font-size: .82rem;
+            outline: none;
+            width: 180px
+        }
+
+        .search-box svg {
+            color: var(--text3);
+            flex-shrink: 0
+        }
+
+        .table-page-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .78rem;
+            color: var(--text2)
+        }
+
+        .export-btns {
+            display: flex;
+            gap: 6px
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            border-radius: var(--radius);
+            border: 1px solid var(--glass-border)
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .8rem
+        }
+
+        .data-table thead {
+            background: var(--bg3);
+            position: sticky;
+            top: 0;
+            z-index: 2
+        }
+
+        .data-table th {
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text2);
+            cursor: pointer;
+            white-space: nowrap;
+            user-select: none;
+            transition: var(--transition);
+            border-bottom: 2px solid var(--glass-border)
+        }
+
+        .data-table th:hover {
+            color: var(--accent)
+        }
+
+        .data-table th .sort-icon {
+            margin-left: 4px;
+            font-size: .7rem;
+            opacity: .4
+        }
+
+        .data-table th.sorted .sort-icon {
+            opacity: 1;
+            color: var(--accent)
+        }
+
+        .data-table td {
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text2);
+            white-space: nowrap;
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .data-table tbody tr {
+            transition: var(--transition)
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(6, 182, 212, .04)
+        }
+
+        .data-table tbody tr:nth-child(even) {
+            background: rgba(255, 255, 255, .015)
+        }
+
+        .data-table tbody tr:nth-child(even):hover {
+            background: rgba(6, 182, 212, .06)
+        }
+
+        /* LOADING */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(11, 15, 26, .85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            gap: 16px
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--bg4);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .8s linear infinite
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .loading-overlay p {
+            color: var(--text2);
+            font-size: .9rem
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp .4s ease forwards
+        }
+
+        .delay-1 {
+            animation-delay: .05s
+        }
+
+        .delay-2 {
+            animation-delay: .1s
+        }
+
+        .delay-3 {
+            animation-delay: .15s
+        }
+
+        .delay-4 {
+            animation-delay: .2s
+        }
+    </style>
+</head>
+
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <div class="logo-icon"><svg viewBox="0 0 32 32" fill="none" width="36" height="36">
+                    <rect x="2" y="2" width="12" height="12" rx="3" fill="url(#g1)" />
+                    <rect x="18" y="2" width="12" height="12" rx="3" fill="url(#g2)" />
+                    <rect x="2" y="18" width="12" height="12" rx="3" fill="url(#g2)" />
+                    <rect x="18" y="18" width="12" height="12" rx="3" fill="url(#g1)" />
+                    <defs>
+                        <linearGradient id="g1" x1="0" y1="0" x2="32" y2="32">
+                            <stop stop-color="#06b6d4" />
+                            <stop offset="1" stop-color="#8b5cf6" />
+                        </linearGradient>
+                        <linearGradient id="g2" x1="0" y1="0" x2="32" y2="32">
+                            <stop stop-color="#8b5cf6" />
+                            <stop offset="1" stop-color="#ec4899" />
+                        </linearGradient>
+                    </defs>
+                </svg></div>
+            <div>
+                <h1 class="app-title">Twin Day Sales</h1>
+                <p class="app-subtitle">Analytics & Review Dashboard</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="sheet-selector-wrap" id="sheetSelectorWrap" style="display:none"><label
+                    for="sheetSelector">Sheet:</label><select id="sheetSelector" class="sheet-select"></select></div>
+            <button class="btn btn-upload" onclick="document.getElementById('fileInput').click()"><svg width="16"
+                    height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                </svg><span>Upload Excel</span></button>
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
+        </div>
+    </header>
+
+    <section class="dropzone-hero" id="dropzoneHero">
+        <div class="dropzone" id="dropzone">
+            <div class="dropzone-content">
+                <div class="dropzone-icon"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="url(#dg)"
+                        stroke-width="1.5">
+                        <defs>
+                            <linearGradient id="dg" x1="0" y1="0" x2="24" y2="24">
+                                <stop stop-color="#06b6d4" />
+                                <stop offset="1" stop-color="#8b5cf6" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg></div>
+                <h2>Drop your Excel file here</h2>
+                <p>or <span class="dropzone-link" onclick="document.getElementById('fileInput').click()">browse
+                        files</span></p>
+                <p class="dropzone-formats">Supports .xlsx, .xls, .csv</p>
+            </div>
+        </div>
+    </section>
+
+    <main class="dashboard" id="dashboard" style="display:none">
+        <div class="file-info-bar" id="fileInfoBar">
+            <div class="file-info-name"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                </svg><span id="fileName">—</span></div>
+            <div class="file-info-stats"><span class="badge" id="rowCount">0 rows</span><span class="badge"
+                    id="colCount">0 columns</span><span class="badge" id="filteredCount">All shown</span></div>
+            <button class="btn btn-clear-filters" id="clearAllFiltersBtn" style="display:none"
+                onclick="clearAllFilters()">✕ Clear All Filters</button>
+        </div>
+        <section class="kpi-section" id="kpiSection"></section>
+        <section class="active-filters" id="activeFilters" style="display:none"><span
+                class="active-filters-label">Active Filters:</span>
+            <div class="active-filters-list" id="activeFiltersList"></div>
+        </section>
+        <div class="main-grid">
+            <aside class="filter-sidebar" id="filterSidebar">
+                <div class="filter-sidebar-header">
+                    <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                        </svg> Filters</h3>
+                </div>
+                <div class="filter-list" id="filterList"></div>
+            </aside>
+            <div class="content-area">
+                <section class="chart-section">
+                    <div class="chart-controls">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <line x1="18" y1="20" x2="18" y2="10" />
+                                <line x1="12" y1="20" x2="12" y2="4" />
+                                <line x1="6" y1="20" x2="6" y2="14" />
+                            </svg> Visualizations</h3>
+                        <div class="chart-axis-controls">
+                            <div class="control-group"><label>X-Axis</label><select id="chartXAxis"
+                                    class="control-select" onchange="updateCharts()"></select></div>
+                            <div class="control-group"><label>Y-Axis</label><select id="chartYAxis"
+                                    class="control-select" onchange="updateCharts()"></select></div>
+                            <div class="control-group"><label>Aggregation</label><select id="chartAgg"
+                                    class="control-select" onchange="updateCharts()">
+                                    <option value="sum">Sum</option>
+                                    <option value="count">Count</option>
+                                    <option value="avg">Average</option>
+                                    <option value="min">Min</option>
+                                    <option value="max">Max</option>
+                                </select></div>
+                            <div class="control-group"><label>Top N</label><select id="chartTopN" class="control-select"
+                                    onchange="updateCharts()">
+                                    <option value="10">10</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                    <option value="50">50</option>
+                                    <option value="all">All</option>
+                                </select></div>
+                        </div>
+                    </div>
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <h4 id="barChartTitle">Bar Chart</h4><button class="btn btn-xs btn-ghost"
+                                    onclick="downloadChart('barChart')">⬇</button>
+                            </div>
+                            <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <h4 id="doughnutChartTitle">Distribution</h4><button class="btn btn-xs btn-ghost"
+                                    onclick="downloadChart('doughnutChart')">⬇</button>
+                            </div>
+                            <div class="chart-wrap"><canvas id="doughnutChart"></canvas></div>
+                        </div>
+                        <div class="chart-card chart-card-wide">
+                            <div class="chart-card-header">
+                                <h4 id="lineChartTitle">Trend</h4><button class="btn btn-xs btn-ghost"
+                                    onclick="downloadChart('lineChart')">⬇</button>
+                            </div>
+                            <div class="chart-wrap chart-wrap-wide"><canvas id="lineChart"></canvas></div>
+                        </div>
+                    </div>
+                </section>
+                <section class="table-section">
+                    <div class="table-header">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                <line x1="3" y1="9" x2="21" y2="9" />
+                                <line x1="3" y1="15" x2="21" y2="15" />
+                                <line x1="9" y1="3" x2="9" y2="21" />
+                            </svg> Data Table</h3>
+                        <div class="table-controls">
+                            <div class="search-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                </svg><input type="text" id="tableSearch" placeholder="Search all columns..."
+                                    oninput="onTableSearch()"></div>
+                            <div class="table-page-info"><span id="pageInfo">—</span><button
+                                    class="btn btn-xs btn-ghost" onclick="changePage(-1)">‹</button><button
+                                    class="btn btn-xs btn-ghost" onclick="changePage(1)">›</button><select
+                                    id="pageSizeSelect" class="control-select control-select-sm"
+                                    onchange="changePageSize()">
+                                    <option value="25">25</option>
+                                    <option value="50" selected>50</option>
+                                    <option value="100">100</option>
+                                    <option value="250">250</option>
+                                </select></div>
+                            <div class="export-btns"><button class="btn btn-sm btn-accent" onclick="exportCSV()">⬇
+                                    CSV</button><button class="btn btn-sm btn-accent-alt" onclick="exportExcel()">⬇
+                                    Excel</button></div>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead id="dataTableHead"></thead>
+                            <tbody id="dataTableBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <div class="loading-overlay" id="loadingOverlay" style="display:none">
+        <div class="spinner"></div>
+        <p>Processing your data…</p>
+    </div>
+
+    <script>
+        // ===== GLOBAL STATE =====
+        let workbook = null, allHeaders = [], allData = [], filteredData = [], columnTypes = {};
+        let activeFilters = {}, sortCol = null, sortDir = 'asc', currentPage = 0, pageSize = 50, searchTerm = '';
+        let chartInstances = { bar: null, doughnut: null, line: null };
+        const COLORS = ['#06b6d4', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7', '#14b8a6', '#f97316', '#6366f1', '#e11d48', '#84cc16', '#0ea5e9', '#d946ef'];
+
+        // ===== FILE HANDLING =====
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over') });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+        dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag-over'); if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]) });
+        dropzone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]) });
+
+        function handleFile(file) {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('fileName').textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    workbook = XLSX.read(e.target.result, { type: 'array', cellDates: true, cellNF: true });
+                    const sel = document.getElementById('sheetSelector');
+                    sel.innerHTML = '';
+                    workbook.SheetNames.forEach((n, i) => { const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o) });
+                    if (workbook.SheetNames.length > 1) document.getElementById('sheetSelectorWrap').style.display = 'flex';
+                    sel.onchange = () => loadSheet(sel.value);
+                    loadSheet(workbook.SheetNames[0]);
+                } catch (err) { alert('Error reading file: ' + err.message) }
+                document.getElementById('loadingOverlay').style.display = 'none';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function loadSheet(name) {
+            const ws = workbook.Sheets[name];
+            const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+            if (!json.length) { alert('Sheet is empty'); return }
+            allHeaders = Object.keys(json[0]);
+            allData = json;
+            columnTypes = detectColumnTypes(allHeaders, allData);
+            activeFilters = {}; sortCol = null; sortDir = 'asc'; currentPage = 0; searchTerm = '';
+            document.getElementById('tableSearch').value = '';
+            document.getElementById('dropzoneHero').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('rowCount').textContent = allData.length + ' rows';
+            document.getElementById('colCount').textContent = allHeaders.length + ' columns';
+            buildFilters(); buildAxisSelectors(); applyFilters();
+        }
+
+        // ===== COLUMN TYPE DETECTION =====
+        function detectColumnTypes(headers, data) {
+            const types = {};
+            const sample = data.slice(0, Math.min(200, data.length));
+            headers.forEach(h => {
+                let nums = 0, dates = 0, total = 0;
+                sample.forEach(r => {
+                    const v = r[h];
+                    if (v === '' || v === null || v === undefined) return;
+                    total++;
+                    if (v instanceof Date || (typeof v === 'string' && !isNaN(Date.parse(v)) && /\d{4}[-\/]\d{1,2}[-\/]\d{1,2}/.test(v))) dates++;
+                    else if (typeof v === 'number' || (!isNaN(Number(v)) && v !== '')) nums++;
+                });
+                if (total === 0) types[h] = 'text';
+                else if (dates / total > .6) types[h] = 'date';
+                else if (nums / total > .6) types[h] = 'number';
+                else types[h] = 'text';
+            });
+            return types;
+        }
+
+        // ===== FILTER BUILDING =====
+        function buildFilters() {
+            const list = document.getElementById('filterList');
+            list.innerHTML = '';
+            allHeaders.forEach((h, idx) => {
+                const type = columnTypes[h];
+                const grp = document.createElement('div'); grp.className = 'filter-group'; grp.id = 'fg-' + idx;
+                let bodyHTML = '';
+                if (type === 'text') {
+                    const uniq = [...new Set(allData.map(r => String(r[h] ?? '')))].sort();
+                    bodyHTML = `<div class="filter-select-actions"><button onclick="selectAllFilter(${idx},true)">Select All</button><button onclick="selectAllFilter(${idx},false)">Deselect All</button></div>`;
+                    bodyHTML += `<input class="filter-search" placeholder="Search..." oninput="filterSearchOptions(${idx},this.value)">`;
+                    bodyHTML += `<div class="filter-options" id="fo-${idx}">`;
+                    uniq.forEach((v, vi) => {
+                        bodyHTML += `<label class="filter-option" data-val="${v.replace(/"/g, '&quot;').toLowerCase()}"><input type="checkbox" checked data-col="${h}" data-val="${v.replace(/"/g, '&quot;')}" onchange="onTextFilterChange()"> <span>${v || '(empty)'}</span></label>`;
+                    });
+                    bodyHTML += `</div>`;
+                } else if (type === 'number') {
+                    const vals = allData.map(r => Number(r[h])).filter(v => !isNaN(v));
+                    const mn = vals.length ? Math.min(...vals) : 0, mx = vals.length ? Math.max(...vals) : 100;
+                    bodyHTML = `<div class="range-filter"><div class="range-inputs"><input class="range-input" type="number" id="rmin-${idx}" value="${mn}" step="any" onchange="onRangeChange(${idx})"><span class="range-sep">—</span><input class="range-input" type="number" id="rmax-${idx}" value="${mx}" step="any" onchange="onRangeChange(${idx})"></div>`;
+                    bodyHTML += `<div class="range-slider-wrap" id="rsw-${idx}" data-min="${mn}" data-max="${mx}"><div class="range-track"></div><div class="range-fill" id="rf-${idx}"></div><div class="range-thumb" id="rt1-${idx}" style="left:0%" onmousedown="startDrag(event,${idx},'min')"></div><div class="range-thumb" id="rt2-${idx}" style="left:100%" onmousedown="startDrag(event,${idx},'max')"></div></div></div>`;
+                } else {
+                    const vals = allData.map(r => r[h]).filter(v => v instanceof Date || (!isNaN(Date.parse(v)) && v));
+                    const parsed = vals.map(v => v instanceof Date ? v : new Date(v)).filter(d => !isNaN(d));
+                    let mnD = '', mxD = '';
+                    if (parsed.length) { parsed.sort((a, b) => a - b); mnD = fmtDate(parsed[0]); mxD = fmtDate(parsed[parsed.length - 1]) }
+                    bodyHTML = `<div><label style="font-size:.72rem;color:var(--text3)">From</label><input class="date-input" type="date" id="dmin-${idx}" value="${mnD}" onchange="onDateChange(${idx})"><label style="font-size:.72rem;color:var(--text3)">To</label><input class="date-input" type="date" id="dmax-${idx}" value="${mxD}" onchange="onDateChange(${idx})"></div>`;
+                }
+                const typeLabel = type === 'text' ? 'TEXT' : type === 'number' ? 'NUM' : 'DATE';
+                const typeCls = type === 'text' ? 'col-type-text' : type === 'number' ? 'col-type-number' : 'col-type-date';
+                grp.innerHTML = `<div class="filter-group-header" onclick="toggleFilterGroup(${idx})"><span>${h}</span><span style="display:flex;align-items:center;gap:6px"><span class="col-type ${typeCls}">${typeLabel}</span><svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="filter-group-body">${bodyHTML}</div>`;
+                list.appendChild(grp);
+            });
+        }
+        function toggleFilterGroup(idx) { document.getElementById('fg-' + idx).classList.toggle('open') }
+        function filterSearchOptions(idx, term) {
+            const opts = document.querySelectorAll('#fo-' + idx + ' .filter-option');
+            term = term.toLowerCase();
+            opts.forEach(o => { o.style.display = o.dataset.val.includes(term) ? '' : 'none' });
+        }
+        function selectAllFilter(idx, checked) {
+            document.querySelectorAll('#fo-' + idx + ' input[type=checkbox]').forEach(cb => { cb.checked = checked });
+            onTextFilterChange();
+        }
+
+        // ===== FILTER APPLICATION =====
+        function onTextFilterChange() { collectFilters(); applyFilters() }
+        function onRangeChange(idx) { collectFilters(); applyFilters() }
+        function onDateChange(idx) { collectFilters(); applyFilters() }
+
+        function collectFilters() {
+            activeFilters = {};
+            allHeaders.forEach((h, idx) => {
+                const type = columnTypes[h];
+                if (type === 'text') {
+                    const cbs = document.querySelectorAll('#fo-' + idx + ' input[type=checkbox]');
+                    const all = [...cbs], checked = all.filter(c => c.checked);
+                    if (checked.length < all.length) {
+                        activeFilters[h] = { type: 'text', values: new Set(checked.map(c => c.dataset.val)) };
+                    }
+                } else if (type === 'number') {
+                    const minEl = document.getElementById('rmin-' + idx), maxEl = document.getElementById('rmax-' + idx);
+                    const wrap = document.getElementById('rsw-' + idx);
+                    const oMin = parseFloat(wrap.dataset.min), oMax = parseFloat(wrap.dataset.max);
+                    const mn = parseFloat(minEl.value), mx = parseFloat(maxEl.value);
+                    if (mn > oMin || mx < oMax) activeFilters[h] = { type: 'number', min: mn, max: mx };
+                } else {
+                    const mnEl = document.getElementById('dmin-' + idx), mxEl = document.getElementById('dmax-' + idx);
+                    if (mnEl.value || mxEl.value) {
+                        const allDates = allData.map(r => r[h]).filter(v => v instanceof Date || (!isNaN(Date.parse(v)) && v)).map(v => v instanceof Date ? v : new Date(v)).filter(d => !isNaN(d));
+                        if (allDates.length) {
+                            allDates.sort((a, b) => a - b);
+                            const oMin = fmtDate(allDates[0]), oMax = fmtDate(allDates[allDates.length - 1]);
+                            if (mnEl.value !== oMin || mxEl.value !== oMax) activeFilters[h] = { type: 'date', min: mnEl.value ? new Date(mnEl.value) : null, max: mxEl.value ? new Date(mxEl.value + 'T23:59:59') : null };
+                        }
+                    }
+                }
+            });
+        }
+
+        function applyFilters() {
+            filteredData = allData.filter(row => {
+                for (const h in activeFilters) {
+                    const f = activeFilters[h];
+                    if (f.type === 'text') { if (!f.values.has(String(row[h] ?? ''))) return false }
+                    else if (f.type === 'number') { const v = Number(row[h]); if (isNaN(v) || v < f.min || v > f.max) return false }
+                    else if (f.type === 'date') {
+                        let d = row[h]; d = d instanceof Date ? d : new Date(d);
+                        if (isNaN(d)) return false;
+                        if (f.min && d < f.min) return false;
+                        if (f.max && d > f.max) return false;
+                    }
+                }
+                return true;
+            });
+            if (searchTerm) {
+                const t = searchTerm.toLowerCase();
+                filteredData = filteredData.filter(r => allHeaders.some(h => String(r[h] ?? '').toLowerCase().includes(t)));
+            }
+            const fk = Object.keys(activeFilters);
+            document.getElementById('clearAllFiltersBtn').style.display = fk.length ? 'inline-flex' : 'none';
+            document.getElementById('filteredCount').textContent = filteredData.length === allData.length ? 'All shown' : filteredData.length + ' of ' + allData.length;
+            renderActiveFilterBadges(); updateKPIs(); currentPage = 0; renderTable(); updateCharts();
+        }
+        function clearAllFilters() {
+            allHeaders.forEach((h, idx) => {
+                const type = columnTypes[h];
+                if (type === 'text') document.querySelectorAll('#fo-' + idx + ' input[type=checkbox]').forEach(c => c.checked = true);
+                else if (type === 'number') {
+                    const wrap = document.getElementById('rsw-' + idx);
+                    document.getElementById('rmin-' + idx).value = wrap.dataset.min;
+                    document.getElementById('rmax-' + idx).value = wrap.dataset.max;
+                    updateSliderVisual(idx);
+                } else {
+                    const vals = allData.map(r => r[h]).filter(v => v instanceof Date || (!isNaN(Date.parse(v)) && v)).map(v => v instanceof Date ? v : new Date(v)).filter(d => !isNaN(d));
+                    if (vals.length) { vals.sort((a, b) => a - b); document.getElementById('dmin-' + idx).value = fmtDate(vals[0]); document.getElementById('dmax-' + idx).value = fmtDate(vals[vals.length - 1]) }
+                }
+            });
+            activeFilters = {}; applyFilters();
+        }
+        function renderActiveFilterBadges() {
+            const cont = document.getElementById('activeFiltersList');
+            const wrap = document.getElementById('activeFilters');
+            const keys = Object.keys(activeFilters);
+            if (!keys.length) { wrap.style.display = 'none'; return }
+            wrap.style.display = 'flex';
+            cont.innerHTML = keys.map(h => {
+                const f = activeFilters[h];
+                let label = h + ': ';
+                if (f.type === 'text') label += f.values.size + ' selected';
+                else if (f.type === 'number') label += f.min + ' – ' + f.max;
+                else label += (f.min ? fmtDate(f.min) : '…') + ' → ' + (f.max ? fmtDate(f.max) : '…');
+                return `<span class="filter-badge" onclick="removeFilter('${h}')">${label} <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>`;
+            }).join('');
+        }
+        function removeFilter(h) {
+            const idx = allHeaders.indexOf(h); if (idx < 0) return;
+            const type = columnTypes[h];
+            if (type === 'text') document.querySelectorAll('#fo-' + idx + ' input[type=checkbox]').forEach(c => c.checked = true);
+            else if (type === 'number') {
+                const wrap = document.getElementById('rsw-' + idx);
+                document.getElementById('rmin-' + idx).value = wrap.dataset.min;
+                document.getElementById('rmax-' + idx).value = wrap.dataset.max;
+                updateSliderVisual(idx);
+            }
+            delete activeFilters[h]; applyFilters();
+        }
+
+        // ===== RANGE SLIDER DRAG =====
+        let dragState = null;
+        function startDrag(e, idx, which) {
+            e.preventDefault();
+            const wrap = document.getElementById('rsw-' + idx);
+            const rect = wrap.getBoundingClientRect();
+            dragState = { idx, which, rect, min: parseFloat(wrap.dataset.min), max: parseFloat(wrap.dataset.max) };
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+        function onDrag(e) {
+            if (!dragState) return;
+            const { idx, which, rect, min, max } = dragState;
+            let pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            let val = min + (max - min) * pct;
+            val = Math.round(val * 100) / 100;
+            if (which === 'min') {
+                const curMax = parseFloat(document.getElementById('rmax-' + idx).value);
+                if (val > curMax) val = curMax;
+                document.getElementById('rmin-' + idx).value = val;
+            } else {
+                const curMin = parseFloat(document.getElementById('rmin-' + idx).value);
+                if (val < curMin) val = curMin;
+                document.getElementById('rmax-' + idx).value = val;
+            }
+            updateSliderVisual(idx); collectFilters(); applyFilters();
+        }
+        function stopDrag() { dragState = null; document.removeEventListener('mousemove', onDrag); document.removeEventListener('mouseup', stopDrag) }
+        function updateSliderVisual(idx) {
+            const wrap = document.getElementById('rsw-' + idx);
+            if (!wrap) return;
+            const min = parseFloat(wrap.dataset.min), max = parseFloat(wrap.dataset.max);
+            const curMin = parseFloat(document.getElementById('rmin-' + idx).value);
+            const curMax = parseFloat(document.getElementById('rmax-' + idx).value);
+            const range = max - min || 1;
+            const lPct = ((curMin - min) / range) * 100, rPct = ((curMax - min) / range) * 100;
+            document.getElementById('rt1-' + idx).style.left = lPct + '%';
+            document.getElementById('rt2-' + idx).style.left = rPct + '%';
+            const fill = document.getElementById('rf-' + idx);
+            fill.style.left = lPct + '%'; fill.style.width = (rPct - lPct) + '%';
+        }
+
+        // ===== KPI CARDS =====
+        // Fuzzy column finder: matches header by keywords (case-insensitive, ignores spaces/underscores)
+        function findCol(keywords) {
+            const kws = keywords.map(k => k.toLowerCase().replace(/[\s_]/g, ''));
+            return allHeaders.find(h => {
+                const norm = h.toLowerCase().replace(/[\s_]/g, '');
+                return kws.every(k => norm.includes(k));
+            }) || null;
+        }
+
+        function sumCol(col) {
+            if (!col) return 0;
+            return filteredData.reduce((s, r) => { const v = Number(r[col]); return s + (isNaN(v) ? 0 : v); }, 0);
+        }
+
+        function updateKPIs() {
+            const sec = document.getElementById('kpiSection');
+
+            // Smart column detection for your Twin Day Sales data
+            const invCountCol = findCol(['invoice', 'count']) || findCol(['inv', 'count']) || findCol(['inv', 'cnt']) || findCol(['invoicecount']);
+            const invValueCol = findCol(['invoice', 'value']) || findCol(['inv', 'value']) || findCol(['inv', 'val']) || findCol(['invoicevalue']);
+            const discountCol = findCol(['scheme2']) || findCol(['scheme', '2']) || findCol(['discount']) || findCol(['disc']);
+            // For date-based monthly avg, try to find a date or month column
+            const dateCol = allHeaders.find(h => columnTypes[h] === 'date') || findCol(['month']) || findCol(['date']) || findCol(['period']);
+
+            const totalInvCount = sumCol(invCountCol);
+            const totalInvValue = sumCol(invValueCol);
+            const totalDiscount = sumCol(discountCol);
+            const asp = totalInvCount > 0 ? totalInvValue / totalInvCount : 0;
+
+            // Average Sale Per Month: detect unique months from date column or month column
+            let avgSalePerMonth = 0;
+            if (dateCol && filteredData.length > 0) {
+                const months = new Set();
+                filteredData.forEach(r => {
+                    let v = r[dateCol];
+                    if (v instanceof Date) {
+                        months.add(v.getFullYear() + '-' + (v.getMonth() + 1));
+                    } else if (typeof v === 'string' && v) {
+                        const d = new Date(v);
+                        if (!isNaN(d)) months.add(d.getFullYear() + '-' + (d.getMonth() + 1));
+                        else months.add(v); // treat as month label
+                    }
+                });
+                const numMonths = months.size || 1;
+                avgSalePerMonth = totalInvValue / numMonths;
+            } else {
+                // Fallback: if no date column, use total as single month
+                avgSalePerMonth = totalInvValue;
+            }
+
+            const cards = [
+                { l: 'Invoice Count', v: fmtNum(totalInvCount), s: invCountCol ? 'Σ ' + invCountCol : 'Column not found', icon: '📦' },
+                { l: 'Invoice Value', v: fmtNum(totalInvValue), s: invValueCol ? 'Σ ' + invValueCol : 'Column not found', icon: '💰' },
+                { l: 'Discount (Scheme2)', v: fmtNum(totalDiscount), s: discountCol ? 'Σ ' + discountCol : 'Column not found', icon: '🏷️' },
+                { l: 'ASP', v: fmtNum(asp), s: 'Invoice Value ÷ Invoice Count', icon: '📊' },
+                { l: 'Avg Sale / Month', v: fmtNum(avgSalePerMonth), s: dateCol ? 'Based on ' + dateCol : 'No date column', icon: '📅' }
+            ];
+
+            sec.innerHTML = cards.map((k, i) => `<div class="kpi-card fade-in delay-${i + 1}">
+                <div class="kpi-label"><span style="margin-right:6px">${k.icon}</span>${k.l}</div>
+                <div class="kpi-value">${k.v}</div>
+                <div class="kpi-sub">${k.s}</div>
+            </div>`).join('');
+        }
+
+        // ===== AXIS SELECTORS =====
+        function buildAxisSelectors() {
+            const xSel = document.getElementById('chartXAxis'), ySel = document.getElementById('chartYAxis');
+            xSel.innerHTML = ''; ySel.innerHTML = '';
+            const textCols = allHeaders.filter(h => columnTypes[h] === 'text' || columnTypes[h] === 'date');
+            const numCols = allHeaders.filter(h => columnTypes[h] === 'number');
+            (textCols.length ? textCols : allHeaders).forEach(h => { const o = document.createElement('option'); o.value = h; o.textContent = h; xSel.appendChild(o) });
+            numCols.forEach(h => { const o = document.createElement('option'); o.value = h; o.textContent = h; ySel.appendChild(o) });
+            if (!numCols.length) { const o = document.createElement('option'); o.value = '__count__'; o.textContent = 'Row Count'; ySel.appendChild(o) }
+        }
+
+        // ===== CHARTS =====
+        function updateCharts() {
+            const xCol = document.getElementById('chartXAxis').value;
+            const yCol = document.getElementById('chartYAxis').value;
+            const agg = document.getElementById('chartAgg').value;
+            const topNVal = document.getElementById('chartTopN').value;
+            const groups = {};
+            filteredData.forEach(r => {
+                const key = String(r[xCol] ?? '');
+                if (!groups[key]) groups[key] = { sum: 0, count: 0, min: Infinity, max: -Infinity, vals: [] };
+                const v = yCol === '__count__' ? 1 : Number(r[yCol]);
+                if (!isNaN(v)) { groups[key].sum += v; groups[key].count++; groups[key].vals.push(v); groups[key].min = Math.min(groups[key].min, v); groups[key].max = Math.max(groups[key].max, v) } else { groups[key].count++ }
+            });
+            let entries = Object.entries(groups).map(([k, g]) => {
+                let val = 0;
+                if (agg === 'sum') val = g.sum; else if (agg === 'count') val = g.count; else if (agg === 'avg') val = g.count ? g.sum / g.count : 0; else if (agg === 'min') val = g.min === Infinity ? 0 : g.min; else val = g.max === -Infinity ? 0 : g.max;
+                return { label: k, value: val };
+            });
+            entries.sort((a, b) => b.value - a.value);
+            if (topNVal !== 'all') entries = entries.slice(0, parseInt(topNVal));
+            const labels = entries.map(e => e.label.length > 20 ? e.label.slice(0, 18) + '…' : e.label);
+            const values = entries.map(e => e.value);
+            const colors = entries.map((_, i) => COLORS[i % COLORS.length]);
+            document.getElementById('barChartTitle').textContent = agg.charAt(0).toUpperCase() + agg.slice(1) + ' of ' + yCol + ' by ' + xCol;
+            document.getElementById('doughnutChartTitle').textContent = 'Distribution: ' + xCol;
+            document.getElementById('lineChartTitle').textContent = 'Trend: ' + yCol + ' by ' + xCol;
+            // Bar
+            if (chartInstances.bar) chartInstances.bar.destroy();
+            chartInstances.bar = new Chart(document.getElementById('barChart'), { type: 'bar', data: { labels, datasets: [{ label: yCol, data: values, backgroundColor: colors.map(c => c + 'cc'), borderColor: colors, borderWidth: 1, borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,.04)' } }, y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,.06)' } } } } });
+            // Doughnut
+            if (chartInstances.doughnut) chartInstances.doughnut.destroy();
+            const doughLabels = labels.slice(0, 12), doughVals = values.slice(0, 12), doughColors = colors.slice(0, 12);
+            chartInstances.doughnut = new Chart(document.getElementById('doughnutChart'), { type: 'doughnut', data: { labels: doughLabels, datasets: [{ data: doughVals, backgroundColor: doughColors.map(c => c + 'cc'), borderColor: '#111827', borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 12, padding: 8 } } } } });
+            // Line
+            if (chartInstances.line) chartInstances.line.destroy();
+            chartInstances.line = new Chart(document.getElementById('lineChart'), { type: 'line', data: { labels, datasets: [{ label: yCol, data: values, borderColor: '#06b6d4', backgroundColor: 'rgba(6,182,212,.1)', fill: true, tension: .4, pointRadius: 3, pointBackgroundColor: '#06b6d4' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,.04)' } }, y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,.06)' } } } } });
+        }
+        function downloadChart(id) {
+            const canvas = document.getElementById(id);
+            const link = document.createElement('a'); link.download = id + '.png'; link.href = canvas.toDataURL('image/png'); link.click();
+        }
+
+        // ===== DATA TABLE =====
+        function renderTable() {
+            const thead = document.getElementById('dataTableHead');
+            const tbody = document.getElementById('dataTableBody');
+            thead.innerHTML = '<tr>' + allHeaders.map(h => {
+                let icon = '⇅'; if (sortCol === h) icon = sortDir === 'asc' ? '↑' : '↓';
+                return `<th onclick="sortTable('${h.replace(/'/g, "\\'")}')" class="${sortCol === h ? 'sorted' : ''}">${h} <span class="sort-icon">${icon}</span></th>`;
+            }).join('') + '</tr>';
+            const start = currentPage * pageSize, end = Math.min(start + pageSize, filteredData.length);
+            const pageData = filteredData.slice(start, end);
+            tbody.innerHTML = pageData.map(r => '<tr>' + allHeaders.map(h => {
+                let v = r[h]; if (v instanceof Date) v = v.toLocaleDateString();
+                return `<td title="${String(v ?? '').replace(/"/g, '&quot;')}">${v ?? ''}</td>`;
+            }).join('') + '</tr>').join('');
+            const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
+            document.getElementById('pageInfo').textContent = `Page ${currentPage + 1} of ${totalPages} (${filteredData.length} rows)`;
+        }
+        function sortTable(col) {
+            if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc'; else { sortCol = col; sortDir = 'asc' }
+            const type = columnTypes[col];
+            filteredData.sort((a, b) => {
+                let va = a[col], vb = b[col];
+                if (type === 'number') { va = Number(va) || 0; vb = Number(vb) || 0 }
+                else { va = String(va ?? '').toLowerCase(); vb = String(vb ?? '').toLowerCase() }
+                if (va < vb) return sortDir === 'asc' ? -1 : 1; if (va > vb) return sortDir === 'asc' ? 1 : -1; return 0;
+            });
+            currentPage = 0; renderTable();
+        }
+        function changePage(d) {
+            const total = Math.ceil(filteredData.length / pageSize);
+            currentPage = Math.max(0, Math.min(total - 1, currentPage + d)); renderTable();
+        }
+        function changePageSize() { pageSize = parseInt(document.getElementById('pageSizeSelect').value); currentPage = 0; renderTable() }
+        function onTableSearch() { searchTerm = document.getElementById('tableSearch').value; applyFilters() }
+
+        // ===== EXPORTS =====
+        function exportCSV() {
+            const rows = [allHeaders.join(','), ...filteredData.map(r => allHeaders.map(h => { let v = String(r[h] ?? ''); if (v.includes(',')) v = '"' + v + '"'; return v }).join(','))];
+            downloadBlob(new Blob([rows.join('\n')], { type: 'text/csv' }), 'filtered_data.csv');
+        }
+        function exportExcel() {
+            const ws = XLSX.utils.json_to_sheet(filteredData, { header: allHeaders });
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Filtered');
+            XLSX.writeFile(wb, 'filtered_data.xlsx');
+        }
+        function downloadBlob(blob, name) { const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = name; a.click(); URL.revokeObjectURL(u) }
+
+        // ===== UTILS =====
+        function fmtNum(n) { if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(2) + 'M'; if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(1) + 'K'; return Number.isInteger(n) ? n.toString() : n.toFixed(2) }
+        function fmtDate(d) { if (!d) return ''; const dt = d instanceof Date ? d : new Date(d); const y = dt.getFullYear(), m = String(dt.getMonth() + 1).padStart(2, '0'), dd = String(dt.getDate()).padStart(2, '0'); return y + '-' + m + '-' + dd }
+    </script>
+</body>
+
+</html>
